@@ -5,9 +5,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -28,8 +32,10 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPolygonClickListener, GoogleMap.OnPolylineClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPolygonClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnMarkerDragListener {
 
     // Constants
     private static final int REQUEST_CODE = 1;
@@ -42,6 +48,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
 
      LatLng userLoc;
+
+     String addressText;
 
      float totalDistance = 0;
      LatLng firstLoc, secondLoc, thirdLoc, fourthLoc;
@@ -122,7 +130,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnPolygonClickListener(this);
         mMap.setOnPolylineClickListener(this);
 
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                Toast.makeText(MapsActivity.this, getAddress(marker.getPosition()), Toast.LENGTH_SHORT).show();
+            }
+        });
+             
+        mMap.setOnMarkerDragListener(this);
+    }
 
+
+
+    private String getAddress(LatLng latLng){
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        String address = "";
+        try {
+            List<Address> addressList = geocoder.getFromLocation(latLng.latitude, latLng.longitude,1);
+            if (addressList != null && addressList.size()>0)
+            {
+                address = "";
+
+                if (addressList.get(0).getThoroughfare() != null)
+                    address += addressList.get(0).getThoroughfare() + "\n";
+                if (addressList.get(0).getLocality()!= null)
+                    address += addressList.get(0).getLocality() + " ";
+                if (addressList.get(0).getPostalCode() != null)
+                    address += addressList.get(0).getPostalCode() + " ";
+                if (addressList.get(0).getAdminArea() != null)
+                    address += addressList.get(0).getAdminArea();
+
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return address;
     }
 
     private void drawShape() {
@@ -132,9 +176,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .strokeColor(Color.RED)
                 .strokeWidth(10)
                 .clickable(true);
-
-
-        PolylineOptions options1 = new PolylineOptions().clickable(true);
 
 
 
@@ -157,9 +198,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         totalDistance = results[0] + results1[0] + results2[0] + results3[0];
 
-
-
-
     }
 
     // Clear maps
@@ -169,7 +207,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             markers.get(i).remove();
         }
 
-        totalDistance = 0;
+       // totalDistance = 0;
         count = 1;
         markers.clear();
        // removing thee shape
@@ -180,16 +218,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMarkerD(LatLng latLng) {
-        MarkerOptions options = new MarkerOptions().title("D").position(latLng);
+        MarkerOptions options = new MarkerOptions().title("D").position(latLng).draggable(true);
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.markerd));
         fourthMarker = mMap.addMarker(options);
     float results[] = new float[10];
 
-    Location.distanceBetween(userLoc.latitude, userLoc.longitude, latLng.latitude, latLng.longitude, results);
+         Location.distanceBetween(userLoc.latitude, userLoc.longitude, latLng.latitude, latLng.longitude, results);
         options.snippet(String.format("Distance = %.2f KM",results[0]/1000));
 
 
         fourthLoc = latLng;
 
+        getAddress(latLng);
         fourthMarker = mMap.addMarker(options);
         markers.add(fourthMarker);
         // setting count to 1
@@ -197,8 +237,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMarkerC(LatLng latLng) {
-        MarkerOptions options = new MarkerOptions().title("C").position(latLng);
+        MarkerOptions options = new MarkerOptions().title("C").position(latLng).draggable(true);
         float results[] = new float[10];
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.markerc));
 
         Location.distanceBetween(userLoc.latitude, userLoc.longitude, latLng.latitude, latLng.longitude, results);
         options.snippet(String.format("Distance = %.2f KM",results[0]/1000));
@@ -212,7 +253,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMarkerB(LatLng latLng) {
-        MarkerOptions options = new MarkerOptions().title("B").position(latLng);
+        MarkerOptions options = new MarkerOptions().title("B").position(latLng).draggable(true);
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.markerb));
         float results[] = new float[10];
 
         Location.distanceBetween(userLoc.latitude, userLoc.longitude, latLng.latitude, latLng.longitude, results);
@@ -230,11 +272,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void setMarkerA(LatLng latLng) {
-        MarkerOptions options = new MarkerOptions().title("A").position(latLng);
+        MarkerOptions options = new MarkerOptions().title("A").position(latLng).draggable(true);
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.markera));
         float results[] = new float[10];
 
         Location.distanceBetween(userLoc.latitude, userLoc.longitude, latLng.latitude, latLng.longitude, results);
         options.snippet(String.format("Distance = %.2f KM",results[0]/1000));
+       // options.snippet(getAddress(latLng));
 
 
 
@@ -297,4 +341,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Toast.makeText(this, "hello ", Toast.LENGTH_SHORT).show();
     }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+clearMarkers();
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+if (marker == firstMarker){
+    firstLoc = marker.getPosition();
+
+    drawShape();
+}
+    }
+
 }
